@@ -2,7 +2,7 @@
 
 SG_ID="sg-099ebb2e067b30709"
 AMI_ID="ami-0220d79f3f480ecf5"
-ZONE_ID="Z05013202FKF0ZL12WAOP"
+ZONE_ID="Z05599553PN2U7PXVT35M"
 DOMAIN_NAME="chaitanyareddy.space"
 
 for instance in $@
