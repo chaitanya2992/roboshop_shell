@@ -1,8 +1,8 @@
 #!/bin/bash
 
 SG_ID="sg-099ebb2e067b30709"
-AMI_ID="ami-0220d79f3f480ecf5" 
-ZONE_ID="Z05599553PN2U7PXVT35M"
+AMI_ID="ami-0220d79f3f480ecf5"
+ZONE_ID="Z05013202FKF0ZL12WAOP"
 DOMAIN_NAME="chaitanyareddy.space"
 
 for instance in $@
@@ -22,7 +22,7 @@ do
             --query 'Reservations[].Instances[].PublicIpAddress' \
             --output text
         )
-        RECORD_NAME="$DOMAIN_NAME"
+        RECORD_NAME="$DOMAIN_NAME" 
     else
         IP=$(
             aws ec2 describe-instances \
@@ -30,7 +30,7 @@ do
             --query 'Reservations[].Instances[].PrivateIpAddress' \
             --output text
         )
-        RECORD_NAME="$instance.$DOMAIN_NAME"
+        RECORD_NAME="$instance.$DOMAIN_NAME" 
     fi
 
     echo "IP Address: $IP"

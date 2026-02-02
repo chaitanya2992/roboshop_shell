@@ -1,64 +1,65 @@
 #!/bin/bash
 
 USERID=$(id -u)
+LOGS_FOLDER="/var/log/shell-roboshop"
+LOGS_FILE="$LOGS_FOLDER/$0.log"
 R="\e[31m"
 G="\e[32m"
 Y="\e[33m"
 N="\e[0m"
-
-LOGS_FOLDER="/var/log/shell-roboshop"
-SCRIPT_NAME=$( echo $0 | cut -d "." -f1 )
 SCRIPT_DIR=$PWD
-MONGODB_HOST=mongodb.chaitanyareddy.space
-LOG_FILE="$LOGS_FOLDER/$SCRIPT_NAME.log" # /var/log/shell-script/16-logs.log
 MYSQL_HOST=mysql.chaitanyareddy.space
 
-mkdir -p $LOGS_FOLDER
-echo "Script started executed at: $(date)" | tee -a $LOG_FILE
-
 if [ $USERID -ne 0 ]; then
-    echo "ERROR:: Please run this script with root privelege"
-    exit 1 # failure is other than 0
+    echo -e "$R Please run this script with root user access $N" | tee -a $LOGS_FILE
+    exit 1
 fi
 
-VALIDATE(){ # functions receive inputs through args just like shell script args
+mkdir -p $LOGS_FOLDER
+
+VALIDATE(){
     if [ $1 -ne 0 ]; then
-        echo -e "$2 ... $R FAILURE $N" | tee -a $LOG_FILE
+        echo -e "$2 ... $R FAILURE $N" | tee -a $LOGS_FILE
         exit 1
     else
-        echo -e "$2 ... $G SUCCESS $N" | tee -a $LOG_FILE
+        echo -e "$2 ... $G SUCCESS $N" | tee -a $LOGS_FILE
     fi
 }
 
-dnf install python3 gcc python3-devel -y &>>$LOG_FILE
+dnf install python3 gcc python3-devel -y &>>$LOGS_FILE
+VALIDATE $? "Installing Python"
 
-id roboshop &>>$LOG_FILE
+id roboshop &>>$LOGS_FILE
 if [ $? -ne 0 ]; then
-    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_FILE
+    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOGS_FILE
     VALIDATE $? "Creating system user"
 else
-    echo -e "User already exist ... $Y SKIPPING $N"
+    echo -e "Roboshop user already exist ... $Y SKIPPING $N"
 fi
 
-mkdir -p /app
+mkdir -p /app 
 VALIDATE $? "Creating app directory"
 
-curl -o /tmp/payment.zip https://roboshop-artifacts.s3.amazonaws.com/payment-v3.zip &>>$LOG_FILE
-VALIDATE $? "Downloading payment application"
+curl -o /tmp/payment.zip https://roboshop-artifacts.s3.amazonaws.com/payment-v3.zip  &>>$LOGS_FILE
+VALIDATE $? "Downloading payment code"
 
-cd /app 
-VALIDATE $? "Changing to app directory"
+cd /app
+VALIDATE $? "Moving to app directory"
 
 rm -rf /app/*
 VALIDATE $? "Removing existing code"
 
-unzip /tmp/payment.zip &>>$LOG_FILE
-VALIDATE $? "unzip payment"
+unzip /tmp/payment.zip &>>$LOGS_FILE
+VALIDATE $? "Uzip payment code"
 
-pip3 install -r requirements.txt &>>$LOG_FILE
+cd /app 
+pip3 install -r requirements.txt &>>$LOGS_FILE
+VALIDATE $? "Installing dependencies"
 
 cp $SCRIPT_DIR/payment.service /etc/systemd/system/payment.service
-systemctl daemon-reload
-systemctl enable payment  &>>$LOG_FILE
+VALIDATE $? "Created systemctl service"
 
-systemctl restart payment
+systemctl daemon-reload
+systemctl enable payment &>>$LOGS_FILE
+systemctl start payment
+VALIDATE $? "Enabled and started payment"
