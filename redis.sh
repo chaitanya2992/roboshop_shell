@@ -7,8 +7,6 @@ R="\e[31m"
 G="\e[32m"
 Y="\e[33m"
 N="\e[0m"
-SCRIPT_DIR=$PWD
-MYSQL_HOST=mysql.chaitanyareddy.space
 
 if [ $USERID -ne 0 ]; then
     echo -e "$R Please run this script with root user access $N" | tee -a $LOGS_FILE
@@ -26,16 +24,16 @@ VALIDATE(){
     fi
 }
 
-cp $SCRIPT_DIR/rabbitmq.repo /etc/yum.repos.d/rabbitmq.repo
-VALIDATE $? "Added RabbitMQ repo"
+dnf module disable redis -y &>>$LOGS_FILE
+dnf module enable redis:7 -y &>>$LOGS_FILE
+VALIDATE $? "Enable Redis:7"
 
-dnf install rabbitmq-server -y &>>$LOGS_FILE
-VALIDATE $? "Installing RabbitMQ server"
+dnf install redis -y  &>>$LOGS_FILE
+VALIDATE $? "Installed Redis"
 
-systemctl enable rabbitmq-server &>>$LOGS_FILE
-systemctl start rabbitmq-server
-VALIDATE $? "Enabled and started rabbitmq"
+sed -i -e 's/127.0.0.1/0.0.0.0/g' -e '/protected-mode/ c protected-mode no' /etc/redis/redis.conf
+VALIDATE $? "Allowing remote connections"
 
-rabbitmqctl add_user roboshop roboshop123 &>>$LOGS_FILE
-rabbitmqctl set_permissions -p / roboshop ".*" ".*" ".*" &>>$LOGS_FILE
-VALIDATE $? "created user and gien permissions"
+systemctl enable redis &>>$LOGS_FILE
+systemctl start redis 
+VALIDATE $? "Enabled and started Redis"
